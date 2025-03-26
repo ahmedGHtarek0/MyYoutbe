@@ -1,5 +1,5 @@
 import express, { response, Router } from 'express';
-import { loginCust, signupCust } from '../services/Customer';
+import { loginCust, signupCust } from '../services/CustomerAuth';
 import { Customermiddlewares } from '../middlewares/CustomerMiddlewres';
 
 const route=express.Router()
