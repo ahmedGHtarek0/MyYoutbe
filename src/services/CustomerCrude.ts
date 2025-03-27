@@ -1,4 +1,5 @@
 import { CustDB } from "../modules/CustomerModules"
+import Post from "../modules/post"
 
 interface profpics{
     smallpic?:string,
@@ -30,4 +31,28 @@ export const deletedpicsodprof=async({id,N}:profpics)=>{
     }catch(err:any){
         return({data:err.message,status:401})
     }
+}
+interface post{
+nameOfOwner:string,
+typestring:string,
+pics:string[],
+postid?:string
+}
+export const addNewPost=async({nameOfOwner,typestring,pics}:post)=>{
+    try{
+    const addpost= await Post.create({nameOfOwner,typestring,pics})
+    await addpost.save()
+    return({data:addpost,status:201})
+    }catch(err){
+        return{data:err,status:401}
+    }
+}
+export const updatepost=async({nameOfOwner,typestring,pics,postid}:post)=>{
+    try{
+        const  finduser= await Post.findOneAndUpdate({_id:postid},{$set:{nameOfOwner,typestring,pics}},{new:true})
+        await finduser?.save(),{ new: true } 
+        return({data:finduser,status:201})
+        }catch(err:any){
+            return({data:err.message,status:401})
+        }
 }
