@@ -1,3 +1,5 @@
+import mongoose from "mongoose"
+import { CommenstDB } from "../modules/Comments"
 import { CustDB } from "../modules/CustomerModules"
 import Post from "../modules/post"
 
@@ -56,3 +58,92 @@ export const updatepost=async({nameOfOwner,typestring,pics,postid}:post)=>{
             return({data:err.message,status:401})
         }
 }
+interface parentPost{
+    content:string,
+    idOfVidorpost:string,
+    id:string,
+    idofparent?:string
+}
+export const addparentcomments=async({content,idOfVidorpost,id}:parentPost)=>{
+    try{
+    const postmakesure= await Post.findOne({_id:idOfVidorpost})
+    const writermakesure= await CustDB.findOne({_id:id})
+    if(!writermakesure){
+        return({data:'something wrong',status:401})
+    }
+    if(!postmakesure){
+        return({data:'the post was deleted',status:401})
+    }
+    const addparentpost= await CommenstDB.create({nameOfWriter:writermakesure.name,content:content,idOfVidorpost:idOfVidorpost})
+    await addparentpost.save()
+    return{data:addparentpost,status:201}
+}catch(err){
+    return({data:err,status:401})
+}
+}
+export const addnestedComments=async({content,idOfVidorpost,id,idofparent}:parentPost)=>{
+    try{
+    const postmakesure= await Post.findOne({_id:idOfVidorpost})
+    const writermakesure= await CustDB.findOne({_id:id})
+    const commnetmakesure= await CommenstDB.findOne({_id:idofparent})
+    if(!commnetmakesure){
+        return({data:'the comments was deleted',status:401})
+    }
+    if(!writermakesure){
+        return({data:'something wrong',status:401})
+    }
+    if(!postmakesure){
+        return({data:'the post was deleted',status:401})
+    }
+    const addparentpost= await CommenstDB.create({nameOfWriter:writermakesure.name,content:content,idOfVidorpost:idOfVidorpost,idofparent:idofparent})
+    await addparentpost.save()
+    return{data:addparentpost,status:201}
+}catch(err){
+    return({data:err,status:401})
+}
+}
+
+export const getAllComments = async () => {
+    try {
+      // Find all top-level comments (those with `idofparent: null`)
+      const topLevelComments = await CommenstDB.find({ idofparent: null });
+  
+      // Recursively fetch child comments for each top-level comment
+      const commentsWithChildren = await Promise.all(
+        topLevelComments.map(async (comment) => {
+          const childComments = await getNestedComments(comment._id);  // Get nested comments
+          return {
+            ...comment.toObject(),  // Convert to plain object
+            children: childComments,  // Add child comments as 'children'
+          };
+        })
+      );
+  
+      return commentsWithChildren;
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    }
+  };
+  
+  // Helper function to recursively get nested comments
+  const getNestedComments = async (parentId:any) => {
+    const childComments = await CommenstDB.find({ idofparent: parentId });
+  
+    if (childComments.length === 0) {
+      return [];
+    }
+  
+    // For each child comment, recursively find its own children
+    const commentsWithChildren = await Promise.all(
+      childComments.map(async (comment:any) => {
+        const nestedChildren:any = await getNestedComments(comment._id);  // Get further nested comments
+        return {
+          ...comment.toObject(),
+          children: nestedChildren,  // Add children to current comment
+        };
+      })
+    );
+  
+    return commentsWithChildren;
+  };
+  

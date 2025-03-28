@@ -1,9 +1,10 @@
 import express from 'express'
 import { Customermiddlewares } from '../middlewares/CustomerMiddlewres'
 import { cloude } from '../middlewares/picturemiddlewares'
-import { addNewPost, addprofpics, deletedpicsodprof, updatepost } from '../services/CustomerCrude'
+import { addnestedComments, addNewPost, addparentcomments, addprofpics, deletedpicsodprof, getAllComments, updatepost } from '../services/CustomerCrude'
 import Post from '../modules/post'
 import mongoose from 'mongoose'
+import { CommenstDB } from '../modules/Comments'
 
 const route= express.Router()
 route.post('/addandupdatepics',Customermiddlewares,cloude.fields([{name:'smallpic',maxCount:1},{name:'bigpic',maxCount:1}]),async(req:any,res)=>{
@@ -80,6 +81,58 @@ route.delete('/deletepost/:postid',Customermiddlewares,async(req:any,res)=>{
     res.status(201).send('deleted')
     }catch(err){
         res.status(401).send(err)
+    }
+})
+route.post('/addparentComments/:idOfVidorpost',Customermiddlewares,async(req:any,res)=>{
+    try{
+    const {content}=req.body
+    const {idOfVidorpost}=req.params
+    const id= req.customer._id
+    const {data,status}=await addparentcomments({content,idOfVidorpost,id})
+    res.status(status).send(data)
+    }catch(err){
+        res.status(401).send(err)
+    }
+})
+route.post('/addnestedcomments/:idOfVidorpost/:idofparent',Customermiddlewares,async(req:any,res)=>{
+    try{
+    const {content}=req.body
+    const {idOfVidorpost,idofparent}=req.params
+    const id= req.customer._id
+    const {data,status}=await addnestedComments({content,idOfVidorpost,id,idofparent})
+    res.status(status).send(data)
+    }catch(err){
+        res.status(401).send(err)
+    }
+})
+route.post('/addlikeC/:postid',Customermiddlewares,async(req:any,res)=>{
+    const postid:string=req.params.postid
+    const addlikes= await CommenstDB.findById(postid)
+    if(!addlikes){
+        res.status(401).send('the comments was deletd')
+        return
+    }
+    addlikes.likes+=1
+    await addlikes?.save()
+    res.status(201).send(addlikes)
+})
+route.post('/deletelikec/:postid',Customermiddlewares,async(req:any,res)=>{
+    const postid:string=req.params.postid
+    const addlikes= await CommenstDB.findOne({_id:postid})
+    if(!addlikes){
+        res.status(401).send('the comments was deletd')
+        return
+    }
+    addlikes.likes-=1
+    await addlikes?.save()
+    res.status(201).send(addlikes)
+})
+route.get('/getallcomments',async(req,res)=>{
+    try{
+   const x= await getAllComments()
+      res.send(x)
+    }catch(err){
+        res.send(err)
     }
 })
 export default route
