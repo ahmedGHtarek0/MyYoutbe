@@ -1,10 +1,11 @@
 import express from 'express'
 import { Customermiddlewares } from '../middlewares/CustomerMiddlewres'
 import { cloude } from '../middlewares/picturemiddlewares'
-import { addnestedComments, addNewPost, addparentcomments, addprofpics, deletedpicsodprof, getAllComments, updatepost } from '../services/CustomerCrude'
+import { addnestedComments, addNewPost, addnewvid, addparentcomments, addprofpics, deletedpicsodprof, getAllComments, updatepost } from '../services/CustomerCrude'
 import Post from '../modules/post'
 import mongoose from 'mongoose'
 import { CommenstDB } from '../modules/Comments'
+import { cloude_vid } from '../middlewares/VideoMiddlewarees'
 
 const route= express.Router()
 route.post('/addandupdatepics',Customermiddlewares,cloude.fields([{name:'smallpic',maxCount:1},{name:'bigpic',maxCount:1}]),async(req:any,res)=>{
@@ -29,12 +30,12 @@ route.delete('/deletepics',Customermiddlewares,async(req:any,res)=>{
         res.status(401).send(err)
     }
 })
-route.post('/addpost',Customermiddlewares,cloude.array('image',5),async(req:any,res)=>{
+route.post('/addvid',Customermiddlewares,cloude_vid.single('vid'),async(req:any,res)=>{
     try{
         const nameOfOwner=req.customer.name
         const {typestring}=req.body
-        const pics=req.files.map((file:any)=>file.path)
-        const {data,status}= await addNewPost({nameOfOwner,typestring,pics})
+        const pics=req.file?.path
+        const {data,status}= await addnewvid({nameOfOwner,typestring,pics})
         res.status(status).send(data)
     }catch(err){
         res.status(401).send(err)
